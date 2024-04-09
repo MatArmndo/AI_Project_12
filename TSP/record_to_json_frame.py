@@ -51,7 +51,7 @@ while TSP.available:
     # Exit if 'q' is pressed
     if key == 'q':
         if data:  # Check if data is not empty
-            with open('digits.json', 'a') as json_file:  # Append mode
+            with open('all_frames.json', 'a') as json_file:  # Append mode
                 json.dump(data, json_file, indent=0)
         exit()
 
