@@ -15,10 +15,7 @@ class Player:
             self.x -= self.speed
         if keys[pygame.K_RIGHT] and self.x < screen_width - self.width:
             self.x += self.speed
-        if keys[pygame.K_UP] and self.y > self.height:
-            self.y -= self.speed
-        if keys[pygame.K_DOWN] and self.y < screen_width - self.height:
-            self.y += self.speed
+
         self.rect.x = self.x  # Update the x-coordinate of the Rect object
         self.rect.y = self.y  # Update the y-coordinate of the Rect object
 
