@@ -1,7 +1,7 @@
 import pygame
 import sys
 import random
-
+import math
 # Initialize Pygame
 pygame.init()
 
@@ -32,6 +32,17 @@ bullet_speed = 7
 bullets = []
 bullet_color_options = [RED, GREEN, BLUE, YELLOW]
 current_bullet_color_index = 0  # Index to track the current bullet color
+bullet_size_multiplier = {RED: 1, GREEN: 1, BLUE: 1, YELLOW: 1}  # Multipliers for bullet sizes
+bullet_speed_multiplier = {RED: 1, GREEN: 1, BLUE: 1, YELLOW: 1} # Multipliers for bullet speed
+
+key_press_count = {pygame.K_1: 0, pygame.K_2: 0, pygame.K_3: 0, pygame.K_4: 0}  # Track key presses
+# Define boolean variables to track whether each power-up has been activated
+power_up_activated = {RED: False, GREEN: False, BLUE: False, YELLOW: False}
+
+# Duration and activation flag for the blue laser beam
+blue_laser_duration = 0  # duration counter for blue laser beam
+blue_laser_active = False  # flag to track if blue laser is active
+
 
 # Enemy properties
 enemy_size = 20
@@ -50,7 +61,6 @@ def create_enemy():
 # Main game loop
 running = True
 while running:
-    # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -58,11 +68,49 @@ while running:
         # Player shooting
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and player_lives > 0:
             bullet_color = bullet_color_options[current_bullet_color_index]
-            bullets.append((pygame.Rect(player_x - bullet_width // 2, player_y - player_size, bullet_width, bullet_height), bullet_color))
+            # Calculate scaled width and height based on the current size multiplier
+
+            bullet_width_scaled = bullet_width * bullet_size_multiplier[bullet_color]
+            bullet_height_scaled = bullet_height * bullet_size_multiplier[bullet_color]
+
+            bullets.append((
+                           pygame.Rect(player_x - bullet_width_scaled // 2, player_y - player_size, bullet_width_scaled,
+                                       bullet_height_scaled), bullet_color))
 
         # Change bullet color
         if event.type == pygame.KEYDOWN and pygame.K_1 <= event.key <= pygame.K_4:
             current_bullet_color_index = event.key - pygame.K_1  # Update bullet color index based on key pressed
+            key_press_count[event.key] += 1  # Increment key press count
+            if bullets is not None:
+                if key_press_count[event.key] == 2 and bullet_color == RED:  # Check if the key has been pressed twice
+                    bullet_size_multiplier[bullet_color] *= 4  # quadruple the bullet size multiplier for the corresponding color
+
+                elif key_press_count[event.key] == 2 and bullet_color == GREEN: # Make an area of effect attack
+                    bullet_speed_multiplier[bullet_color] *= 1.5
+                    for angle in range(-30, 31, 30):  # Create three bullets with slight variations in trajectory
+                        radians = math.radians(angle)
+                        vx = bullet_speed * bullet_speed_multiplier[bullet_color] * math.sin(radians)
+                        vy = -bullet_speed * bullet_speed_multiplier[bullet_color] * math.cos(radians)
+                        bullets.append((
+                            pygame.Rect(player_x - bullet_width_scaled // 2, player_y - player_size, bullet_width_scaled,
+                                        bullet_height_scaled), bullet_color, vx, vy))
+                elif key_press_count[event.key] == 2 and bullet_color == BLUE:
+                    if not power_up_activated[BLUE]:
+                        blue_laser_duration = 100  # Set duration to 100 frames
+                        blue_laser_active = True
+                    power_up_activated[BLUE] = True
+
+                elif key_press_count[event.key] == 2 and bullet_color == YELLOW:
+                    bullet_speed_multiplier[bullet_color] *= 3
+                else:
+                    bullet_color = bullet_color_options[current_bullet_color_index]
+                    bullet_size_multiplier[bullet_color] = 1
+                    bullet_speed_multiplier[bullet_color] = 1
+                if key_press_count[event.key] > 2:
+                    key_press_count[event.key] = 0
+
+    print(key_press_count)
+
 
     # Get the state of all keyboard keys
     keys = pygame.key.get_pressed()
@@ -79,7 +127,7 @@ while running:
 
     # Update bullet positions
     for bullet in bullets:
-        bullet[0].y -= bullet_speed
+        bullet[0].y -= bullet_speed * bullet_speed_multiplier[bullet_color]
 
     # Remove bullets that have left the screen
     bullets = [bullet for bullet in bullets if bullet[0].y > 0]
@@ -122,7 +170,17 @@ while running:
 
     # Draw bullets
     for bullet in bullets:
-        pygame.draw.rect(screen, bullet[1], bullet[0])
+        if bullet[1] == BLUE and blue_laser_active:  # Draw blue laser beam if active
+            pygame.draw.line(screen, BLUE, (player_x, 0), (player_x, HEIGHT), 5)
+        else:
+            pygame.draw.rect(screen, bullet[1], bullet[0])
+
+    # Update blue laser duration and deactivate when duration is over
+    if blue_laser_active:
+        blue_laser_duration -= 1
+        if blue_laser_duration <= 0:
+            blue_laser_active = False
+            power_up_activated[BLUE] = False
 
     # Draw enemies
     for enemy in enemies:

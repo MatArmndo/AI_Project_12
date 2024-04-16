@@ -1,9 +1,10 @@
 import pygame
 import sys
 import random
+
 from player import Player
-from bullet import Bullet
 from enemy import Enemy
+from bullet import Bullet
 
 # Set up the screen dimensions
 WIDTH, HEIGHT = 800, 600
@@ -18,14 +19,26 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 
+# Bullet variables
+bullet_width = 5
+bullet_height = 10
+bullet_speed = 7
+key_press_count = {pygame.K_1: 0, pygame.K_2: 0, pygame.K_3: 0, pygame.K_4: 0}  # Track key presses
+power_up_activated = {RED: False, GREEN: False, BLUE: False,
+                      YELLOW: False}  # Define boolean variables to track whether each power-up has been activated
+bullet_size_multiplier = {RED: 1, GREEN: 1, BLUE: 1, YELLOW: 1}  # Multipliers for bullet sizes
+bullet_speed_multiplier = {RED: 1, GREEN: 1, BLUE: 1, YELLOW: 1}  # Multipliers for bullet speed
+
 # Initialize Pygame
 pygame.init()
+
 
 # Function to create enemies
 def create_enemy(enemies, screen_width):
     if random.randint(1, 100) < 5:
         enemy_color = random.choice([RED, GREEN, BLUE, YELLOW])
         enemies.append(Enemy(20, 20, 3, enemy_color, screen_width))
+
 
 # Main game loop
 def main():
@@ -44,11 +57,37 @@ def main():
                 running = False
 
             if event.type == pygame.KEYDOWN:
+                bullet_color = [RED, GREEN, BLUE, YELLOW][current_bullet_color_index]
+                bullet_width_scaled = bullet_width * bullet_size_multiplier[bullet_color]
+                bullet_height_scaled = bullet_height * bullet_size_multiplier[bullet_color]
+                bullet_speed_scaled = bullet_speed * bullet_speed_multiplier[bullet_color]
+
                 if event.key == pygame.K_SPACE and player.lives > 0:
-                    bullet_color = [RED, GREEN, BLUE, YELLOW][current_bullet_color_index]
-                    bullets.append(Bullet(player.x, player.y, 5, 10, 7, bullet_color))
+                    bullets.append((Bullet(player.x, player.y, bullet_width_scaled, bullet_height_scaled,
+                                           bullet_speed_scaled, bullet_color)))
                 elif pygame.K_1 <= event.key <= pygame.K_4:
+                    key_press_count[event.key] += 1  # Increment key press count
                     current_bullet_color_index = event.key - pygame.K_1
+                    if key_press_count[event.key] == 2:
+                        upgrade_type = None
+                        if bullet_color == RED:
+                            upgrade_type = "RED"
+                        elif bullet_color == YELLOW:
+                            upgrade_type = "YELLOW"
+                        elif bullet_color == BLUE:
+                            upgrade_type = "BLUE"
+                            bullet.apply_upgrade(upgrade_type, apply_to_current = True)
+                        for bullet in bullets:
+                            bullet.apply_upgrade(upgrade_type, bullet_size_multiplier, bullet_speed_multiplier, apply_to_current = False)
+                    else:
+                        # Reset bullet size multiplier to 1
+                        for color in bullet_size_multiplier:
+                            bullet_size_multiplier[color] = 1
+                        for color in bullet_speed_multiplier:
+                            bullet_speed_multiplier[color] = 1
+                    if key_press_count[event.key] > 2:
+                        key_press_count[event.key] = 0  # Reset key press count
+
 
         keys = pygame.key.get_pressed()
         player.move(keys, WIDTH)
@@ -60,6 +99,8 @@ def main():
             for bullet in bullets:
                 bullet.move()
                 bullet.draw(screen)
+                if bullet.remove:
+                    bullets.remove(bullet)
 
             for enemy in enemies:
                 enemy.move()
@@ -71,7 +112,8 @@ def main():
             for bullet in bullets:
                 for enemy in enemies:
                     if bullet.rect.colliderect(enemy.rect) and bullet.color == enemy.color:
-                        bullets.remove(bullet)
+                        if bullet in bullets:
+                            bullets.remove(bullet)
                         enemies.remove(enemy)
                         score += 1  # Increment score when an enemy is destroyed
 
@@ -80,6 +122,7 @@ def main():
                 if player.rect.colliderect(enemy.rect):
                     player.lives -= 1
                     enemies.remove(enemy)
+
 
             # Draw score and player lives
             font = pygame.font.Font(None, 24)
@@ -90,7 +133,8 @@ def main():
 
             if player.lives == 0:
                 game_over_text = font.render("Game Over", True, WHITE)
-                screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height() // 2))
+                screen.blit(game_over_text, (
+                WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height() // 2))
                 game_over = True
                 game_over_time = pygame.time.get_ticks()
 
@@ -104,5 +148,55 @@ def main():
     pygame.quit()
     sys.exit()
 
+
 if __name__ == "__main__":
     main()
+import pygame
+import math
+class Bullet:
+    def __init__(self, x, y, width, height, speed, color):
+        self.rect = pygame.Rect(x - width // 2, y - height, width, height)
+        self.speed = speed
+        self.color = color
+        self.laser_active = False
+        self.remove = False  # Flag to indicate if the bullet should be removed
+        self.upgrade_applied = False  # Flag to indicate if the upgrade has been applied to this bullet
+        self.laser_start_time = 0
+        self.laser_duration = 300
+        self.laser_end_y = 0
+
+
+    def move(self):
+
+        if not self.laser_active:
+            self.rect.y -= self.speed
+            self.laser_active = False
+        else:
+            self.rect.y = self.laser_end_y
+            if pygame.time.get_ticks() - self.laser_start_time >= self.laser_duration:
+                self.laser_active = False
+        if self.rect.y < 0:
+            self.remove = True  # Set the flag to True if the bullet has left the screen
+    def draw(self, screen):
+        if not self.laser_active:
+            pygame.draw.rect(screen, self.color, self.rect)
+        else:
+            pygame.draw.line(screen, self.color,
+                             (self.rect.x + self.rect.width // 2 , 0),
+                             (self.rect.x, 601), 5)
+
+
+    def change_color(self, color):
+        self.color = color
+    def apply_upgrade(self, upgrade_type, bullet_size_multiplier=None, bullet_speed_multiplier=None, apply_to_current=False):
+        if upgrade_type == "RED":
+            bullet_size_multiplier[self.color] = 2.5
+        elif upgrade_type == "GREEN":
+            None
+        elif upgrade_type == "BLUE" and not self.upgrade_applied and apply_to_current:
+            self.laser_active = True
+            self.upgrade_applied = True
+            self.laser_start_time = pygame.time.get_ticks()  # Start tracking laser activation time
+        elif upgrade_type == "YELLOW":
+            bullet_speed_multiplier[self.color] = 5
+        print(self.laser_active)
