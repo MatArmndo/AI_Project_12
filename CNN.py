@@ -7,7 +7,7 @@ import seaborn as sns
 import json
 
 # Load the data from 'all_frames.json'
-with open('TSP/all_frames.json', 'r') as file:
+with open('Data/all_frames.json', 'r') as file:
     data = json.load(file)
 
 # Preprocess the data

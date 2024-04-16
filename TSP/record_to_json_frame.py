@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 import json
-import time
-from support_functions import TSPDecoder, AsciiDecoder
+from SecondPhase.support_functions import TSPDecoder, AsciiDecoder
 
 rows = 27
 columns = 19
@@ -37,9 +36,9 @@ while TSP.available:
     if key.isdigit():
         sep = not sep
         data.append({
-            "time": time.time(),  # Timestamp
+
             "label": key,  # Label for the drawn digit
-            "sep": sep,  # Separator boolean
+
             "frame": grid  # Frame data
         })
 
@@ -51,7 +50,7 @@ while TSP.available:
     # Exit if 'q' is pressed
     if key == 'q':
         if data:  # Check if data is not empty
-            with open('air_2.json', 'a') as json_file:  # Append mode
+            with open('A_fire.json', 'a') as json_file:  # Append mode
                 json.dump(data, json_file, indent=0)
         exit()
 

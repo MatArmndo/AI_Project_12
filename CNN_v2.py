@@ -7,16 +7,17 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
 # 데이터 불러오기
-with open('TSP/all_frames.json', 'r') as file:
+with open('all_frames.json', 'r') as file:
     data = json.load(file)
 
 # 데이터 전처리
 images = np.array([frame['frame'] for frame in data])
+print(images)
 labels = np.array([int(frame['label']) for frame in data])  # 라벨 값을 0부터 시작하도록 수정
 
 # 데이터 형태 수정 (RGB 이미지가 아니므로 channel은 1)
 images = images.reshape((images.shape[0], 27, 19, 1)).astype('float32') / 255.0
-
+print(images)
 # 훈련 세트와 테스트 세트로 데이터 나누기
 x_train, x_test, y_train, y_test = train_test_split(images, labels, test_size=0.2, random_state=42)
 
@@ -37,7 +38,7 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # 모델 학습
-history = model.fit(x_train, y_train, epochs=84, validation_split=0.2) # 84 epochs are the most sufficient
+history = model.fit(x_train, y_train, epochs=300, validation_split=0.2) # 84 epochs are the most sufficient
 
 # 모델 평가
 test_loss, test_accuracy = model.evaluate(x_test, y_test)
