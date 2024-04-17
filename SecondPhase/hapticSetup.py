@@ -4,7 +4,7 @@ from keras.models import load_model
 from support_functions import *
 
 # Load the trained model
-model = load_model('trained_model.h5')  # 훈련된 모델 파일명을 넣어주세요
+model = load_model('trained_model_8classes.h5')  # 훈련된 모델 파일명을 넣어주세요
 
 # Initialize TSPDecoder
 rows = 27

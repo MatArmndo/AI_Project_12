@@ -39,7 +39,7 @@ def save_data():
         item["frame"] = item["frame"].tolist()
 
     if data:
-        with open('recorded_data.json', 'w') as json_file:
+        with open('../Data/recorded_flames_fires.json', 'w') as json_file: # it needs to be change everytime being recorded by a person
             json.dump(data, json_file)
 
 # Main loop to capture frames and record data

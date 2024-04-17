@@ -4,7 +4,7 @@ import json
 
 # Load data from JSON file
 try:
-  with open('SecondPhase/recorded_data.json', 'r') as json_file:
+  with open('Data/recorded_data.json', 'r') as json_file:
     data = json.load(json_file)
 except FileNotFoundError:
   print("Error: 'recorded_data.json' file not found.")
