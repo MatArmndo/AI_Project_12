@@ -1,6 +1,6 @@
 import cv2
 from SecondPhase.support_functions import *
-from CNN_v5 import model
+from FirstPhase.CNN_v5 import model
 
 rows = 27
 cols = 19

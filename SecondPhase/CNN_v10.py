@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load the recorded data
-with open('recorded_data.json', 'r') as json_file:
+with open('all_recorded_data.json', 'r') as json_file:
     data = json.load(json_file)
 
 # Separate images and labels
@@ -47,7 +47,7 @@ model.add(Dense(num_classes, activation='softmax'))
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Define early stopping callback
-early_stopping = EarlyStopping(monitor='val_loss', patience=3)
+early_stopping = EarlyStopping(monitor='val_loss', patience=4)
 
 # Define data augmentation
 datagen = ImageDataGenerator(
@@ -64,7 +64,7 @@ datagen = ImageDataGenerator(
 datagen.fit(X_train)
 
 # Train the model with data augmentation and early stopping callback
-history = model.fit(datagen.flow(X_train, y_train, batch_size=32), epochs=50, validation_data=(X_test, y_test), callbacks=[early_stopping])
+history = model.fit(datagen.flow(X_train, y_train, batch_size=64), epochs=50, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # Evaluate the model
 loss, accuracy = model.evaluate(X_test, y_test)
