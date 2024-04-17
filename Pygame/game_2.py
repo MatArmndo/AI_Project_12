@@ -78,7 +78,7 @@ def main():
     game_over_time = None
 
     running = True
-    while running:
+    while running and TSPDecoder.available():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
