@@ -6,6 +6,11 @@ from player import Player
 from enemy import Enemy
 from bullet import Bullet
 
+import cv2
+import numpy as np
+from keras.models import load_model
+from support_functions import *
+
 # Set up the screen dimensions
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -29,9 +34,24 @@ power_up_activated = {RED: False, GREEN: False, BLUE: False,
 bullet_size_multiplier = {RED: 1, GREEN: 1, BLUE: 1, YELLOW: 1}  # Multipliers for bullet sizes
 bullet_speed_multiplier = {RED: 1, GREEN: 1, BLUE: 1, YELLOW: 1}  # Multipliers for bullet speed
 
+# Load the trained model
+model = load_model('trained_model_8classes.h5')
+
 # Initialize Pygame
 pygame.init()
 
+# Function to predict label
+def predict_label(grid):
+    # Preprocess the grid
+    grid = np.expand_dims(grid, axis=0)
+    grid = np.expand_dims(grid, axis=-1)
+    grid = grid / 255.0
+
+    # Predict label
+    prediction = model.predict(grid)
+    predicted_label = np.argmax(prediction) + 1  # Classes start from 1
+
+    return predicted_label
 
 # Function to create enemies
 def create_enemy(enemies, screen_width):
@@ -69,16 +89,16 @@ def main():
                 elif pygame.K_1 <= event.key <= pygame.K_4:
                     current_bullet_color_index = event.key - pygame.K_1
 
-                elif pygame.K_5 == event.key:
+                elif pygame.K_5 <= event.key <= pygame.K_8:
                     upgrade_type = None
-                    if bullet_color == RED:
+                    if event.key == pygame.K_5:
                         upgrade_type = "RED"
-                    elif bullet_color == YELLOW:
+                    elif event.key == pygame.K_8:
                         upgrade_type = "YELLOW"
-                    elif bullet_color == BLUE:
+                    elif event.key == pygame.K_6:
                         upgrade_type = "BLUE"
                         bullet.apply_upgrade(upgrade_type, apply_to_current=True)
-                    elif bullet_color == GREEN:
+                    elif event.key == pygame.K_7:
                         upgrade_type = "GREEN"
                         new_bullets = []  # Store new bullets separately
                         new_bullets.extend(bullet.apply_upgrade(upgrade_type, bullet_size_multiplier,

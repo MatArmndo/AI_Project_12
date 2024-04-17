@@ -1,6 +1,6 @@
 import cv2
 from SecondPhase.support_functions import *
-from CNN_v4 import model  # CNN_v3.py 파일로부터 모델 불러오기
+from FirstPhase.CNN_v4 import model  # CNN_v3.py 파일로부터 모델 불러오기
 
 rows = 27
 cols = 19

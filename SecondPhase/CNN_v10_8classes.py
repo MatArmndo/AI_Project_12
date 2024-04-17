@@ -5,7 +5,7 @@ import json
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
@@ -50,20 +50,22 @@ X_test = np.expand_dims(X_test, axis=-1)
 
 # Define the CNN model
 model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(27, 19, 1)))
+model.add(Conv2D(64, (3, 3), activation='relu', input_shape=(27, 19, 1)))
 model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(BatchNormalization())
+model.add(Conv2D(128, (3, 3), activation='relu'))
+model.add(Conv2D(128, (3, 3), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Flatten())
-model.add(Dense(64, activation='relu'))
+model.add(Dense(128, activation='relu'))
+#model.add(Dropout(0.5))
 model.add(Dense(num_classes, activation='softmax'))
 
 # Compile the model
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Define early stopping callback
-early_stopping = EarlyStopping(monitor='val_loss', patience=5)
+early_stopping = EarlyStopping(monitor='val_loss', patience=4)
 
 # Define data augmentation
 datagen = ImageDataGenerator(
@@ -80,7 +82,7 @@ datagen = ImageDataGenerator(
 datagen.fit(X_train)
 
 # Train the model with data augmentation and early stopping callback
-history = model.fit(datagen.flow(X_train, y_train, batch_size=256), epochs=50, validation_data=(X_test, y_test), callbacks=[early_stopping])
+history = model.fit(datagen.flow(X_train, y_train, batch_size=64), epochs=50, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # Evaluate the model
 loss, accuracy = model.evaluate(X_test, y_test)
@@ -99,6 +101,42 @@ plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
 plt.title('Confusion Matrix')
 plt.show()
+
+from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
+
+# Generate predictions
+y_pred = model.predict(X_test)
+y_pred_classes = np.argmax(y_pred, axis=1)
+y_true = np.argmax(y_test, axis=1)
+
+# Print classification report
+print(classification_report(y_true, y_pred_classes))
+
+# Plot training history
+plt.figure(figsize=(12, 5))
+
+# Plot accuracy
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+
+# Plot loss
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
 
 # Save the trained model
 model.save('trained_model_8classes.h5')
