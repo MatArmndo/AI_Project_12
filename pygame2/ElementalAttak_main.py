@@ -45,14 +45,27 @@ def main():
     tot = np.zeros((rows, columns))
     predicted_label = None
 
+    # Function to predict label
+    def predict_label(grid):
+        # Preprocess the grid
+        grid = np.expand_dims(grid, axis=0)
+        grid = np.expand_dims(grid, axis=-1)
+        grid = grid / 255.0
+
+        # Predict label
+        prediction = model.predict(grid)
+        predicted_label = np.argmax(prediction) + 1  # 클래스를 1부터 시작하도록 수정
+
+        return predicted_label
+
     # Function to handle events
-    def handle_events(current_bullet_color_index, bullet_size, bullet_color):  # Pass current_bullet_color_index, bullet_size, and bullet_color as arguments
+    def handle_events(current_bullet_color_index, bullet_size, bullet_color, predicted_label):
+        # global predicted_label  # Declare predicted_label as global
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
 
             # Change bullet color
-            #if event.type == pygame.KEYDOWN:
             if predicted_label == 1:
                 current_bullet_color_index = 0  # Red
             elif predicted_label == 2:
@@ -73,13 +86,13 @@ def main():
             elif predicted_label == 8:
                 current_bullet_color_index = 3  # Powered-up Yellow
                 bullet_size = 10
-            bullet_color = bullet_color_options[current_bullet_color_index]  # Update the current bullet color
+            bullet_color = bullet_color_options[current_bullet_color_index]
 
             # Player shooting
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and player.lives > 0:
-                bullets.append(Bullet(player.x - 2, player.y - player.size, bullet_color, bullet_size))  # Create a bullet with the current color
+                bullets.append(Bullet(player.x - 2, player.y - player.size, bullet_color, bullet_size))
 
-        return current_bullet_color_index, bullet_size, bullet_color  # Return updated values
+        return current_bullet_color_index, bullet_size, bullet_color
 
     # Function to update game state
     def update():
@@ -141,22 +154,14 @@ def main():
         # Update the display
         pygame.display.flip()
 
-    # Function to predict label
-    def predict_label(grid):
-        # Preprocess the grid
-        grid = np.expand_dims(grid, axis=0)
-        grid = np.expand_dims(grid, axis=-1)
-        grid = grid / 255.0
 
-        # Predict label
-        prediction = model.predict(grid)
-        predicted_label = np.argmax(prediction) + 1  # 클래스를 1부터 시작하도록 수정
-
-        return predicted_label
 
     # Main game loop
     # running = True
     while TSP.available:
+        update()  # Update game state
+        draw()  # Draw objects on the screen
+
         # Read frame from TSPDecoder
         grid = TSP.readFrame()
         tot = np.maximum(tot, grid)
@@ -174,9 +179,8 @@ def main():
             predicted_label = predict_label(tot)
             print("Predicted Label:", predicted_label)
 
-        current_bullet_color_index, bullet_size, bullet_color = handle_events(current_bullet_color_index, bullet_size, bullet_color)  # Handle events
-        update()  # Update game state
-        draw()  # Draw objects on the screen
+        current_bullet_color_index, bullet_size, bullet_color = handle_events(current_bullet_color_index, bullet_size, bullet_color, predicted_label)  # Handle events
+
 
         # Cap the frame rate
         pygame.time.Clock().tick(60)
