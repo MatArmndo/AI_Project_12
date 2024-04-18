@@ -5,7 +5,7 @@ import json
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, BatchNormalization
 from keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
@@ -38,7 +38,7 @@ labels = np.concatenate(all_labels, axis=0)
 images = images / 255.0
 
 # Convert labels to one-hot encoding
-num_classes = 8  # 총 클래스 개수
+num_classes = 8  # total number of classes
 labels = to_categorical(labels - 1, num_classes=num_classes)
 
 # Split data into training and testing sets

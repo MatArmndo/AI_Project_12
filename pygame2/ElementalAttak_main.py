@@ -43,6 +43,7 @@ def main():
     columns = 19
     TSP = TSPDecoder(rows=rows, columns=columns)
     tot = np.zeros((rows, columns))
+    tmp = np.zeros((rows * 10, columns * 10))
     predicted_label = None
 
     # Function to predict label
@@ -59,21 +60,35 @@ def main():
         return predicted_label
 
     # Function to handle events
-    def handle_events(current_bullet_color_index, bullet_size, bullet_color, predicted_label):
-        # global predicted_label  # Declare predicted_label as global
+    def handle_events(current_bullet_color_index, bullet_size, bullet_color, predicted_label, grid, tot):
+        tot[...] = np.maximum(tot, grid)
+
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
 
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
+                tot[...] = np.zeros((rows, columns))
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_v:
+                predicted_label = predict_label(tot)
+                print("Predicted Label:", predicted_label)
+
+
             # Change bullet color
             if predicted_label == 1:
                 current_bullet_color_index = 0  # Red
+                bullet_size = 5
             elif predicted_label == 2:
                 current_bullet_color_index = 1  # Blue
+                bullet_size = 5
             elif predicted_label == 3:
                 current_bullet_color_index = 2  # Green
+                bullet_size = 5
             elif predicted_label == 4:
                 current_bullet_color_index = 3  # Yellow
+                bullet_size = 5
             elif predicted_label == 5:
                 current_bullet_color_index = 0  # Powered-up Red
                 bullet_size = 10
@@ -159,27 +174,17 @@ def main():
     # Main game loop
     # running = True
     while TSP.available:
+        grid =TSP.readFrame()
+        tot = np.maximum(tot, grid)
+
+
+        current_bullet_color_index, bullet_size, bullet_color = handle_events(current_bullet_color_index, bullet_size, bullet_color, predicted_label, grid, tot)  # Handle events
+        tmp = cv2.resize(tot, (rows * 10, columns * 10))
+
         update()  # Update game state
         draw()  # Draw objects on the screen
 
-        # Read frame from TSPDecoder
-        grid = TSP.readFrame()
-        tot = np.maximum(tot, grid)
-        tmp = cv2.resize(tot, (rows * 10, columns * 10))
-
-        # Show frame
         cv2.imshow("Drawing", tmp.astype(np.uint8))
-        key = cv2.waitKey(1)
-
-        # Handle key presses
-        if key == ord('c'):
-            tot = np.zeros((rows, columns))  # Clear the drawing
-        elif key == ord('v'):
-            # Predict label
-            predicted_label = predict_label(tot)
-            print("Predicted Label:", predicted_label)
-
-        current_bullet_color_index, bullet_size, bullet_color = handle_events(current_bullet_color_index, bullet_size, bullet_color, predicted_label)  # Handle events
 
 
         # Cap the frame rate
